@@ -39,14 +39,14 @@ def resolve_domain(domain):
 
     # Step 2: Extract TLD server port from the root response
     root_response_parts = root_response.strip().split()
-    if len(root_response_parts) == 2 and root_response_parts[0] == "resolve":
+    if len(root_response_parts) == 4 and root_response_parts[0] == "resolve":
         try:
-            tld_port = int(root_response_parts[1])
+            tld_port = int(root_response_parts[3])
         except ValueError:
             print("Invalid port in root response")
             sys.exit(1)
     else:
-        print(f"Invalid root response: {root_response}")
+        print(f"{root_response}")
         sys.exit(1)
 
     # Step 3: Query the TLD server
