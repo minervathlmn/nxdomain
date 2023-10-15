@@ -38,8 +38,17 @@ def resolve_domain(domain):
         sys.exit(1)
 
     # Step 2: Extract TLD server port from the root response
-    tld_port = int(root_response.strip())
-    
+    root_response_parts = root_response.strip().split()
+    if len(root_response_parts) == 2 and root_response_parts[0] == "resolve":
+        try:
+            tld_port = int(root_response_parts[1])
+        except ValueError:
+            print("Invalid port in root response")
+            sys.exit(1)
+    else:
+        print(f"Invalid root response: {root_response}")
+        sys.exit(1)
+
     # Step 3: Query the TLD server
     tld_response = query_dns("localhost", ".".join(domain.split('.')[1:]) + "\n", tld_port)
     if tld_response is None:
@@ -47,8 +56,12 @@ def resolve_domain(domain):
         sys.exit(1)
 
     # Step 4: Extract authoritative server port from the TLD response
-    auth_port = int(tld_response.strip())
-    
+    try:
+        auth_port = int(tld_response.strip())
+    except ValueError:
+        print("INVALID TLD RESPONSE")
+        sys.exit(1)
+
     # Step 5: Query the authoritative server
     auth_response = query_dns("localhost", domain + "\n", auth_port)
     if auth_response is None:
@@ -61,7 +74,7 @@ def resolve_domain(domain):
     elapsed_time = time.time() - start_time
 
     if elapsed_time > timeout:
-        print("NXDOMAIN")
+        print("TIMEOUT")
         sys.exit(1)
 
 # Main program
