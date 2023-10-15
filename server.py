@@ -70,7 +70,7 @@ def handle_exit_command(connection):
 def resolve_hostname(hostname, connection):
     if hostname in hostname_to_port:
         port = hostname_to_port[hostname]
-        connection.send(f"resolve {hostname} to {port}\n".encode())
+        connection.send(f"{port}\n".encode())
         print(f"resolve {hostname} to {port}")
     else:
         connection.send("resolve NXDOMAIN\n".encode())
