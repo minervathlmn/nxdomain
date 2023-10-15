@@ -1,4 +1,4 @@
 1024
 com,1025
-www.google.com,8987
-google.com,1026
+org,1026
+google.com,1027
