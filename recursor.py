@@ -1,53 +1,75 @@
-# recursor.py
-
+import sys
 import socket
-from sys import argv
+import time
 
-def main(args: list[str]) -> None:
-    if len(args) != 1:
-        print("Usage: python recursor.py <root_dns_server>")
-        return
+# Check the number of command-line arguments
+if len(sys.argv) != 3:
+    print("INVALID ARGUMENTS")
+    sys.exit(1)
 
-    root_dns_server = (args[0], 53)  # Ambil alamat server DNS root dari argumen command-line
-    recursor = DNS_Recursor(root_dns_server)
-    recursor.start()
+# Extract the command-line arguments
+root_port = int(sys.argv[1])
+timeout = float(sys.argv[2])
 
-class DNS_Recursor:
-    def __init__(self, root_dns_server):
-        self.root_dns_server = root_dns_server  # Alamat server DNS root
-        self.cache = {}  # Cache DNS sederhana
+# Validate the root port range
+if not (1024 <= root_port <= 49151):
+    print("INVALID PORT NUMBER")
+    sys.exit(1)
 
-    def start(self):
-        while True:
-            domain = input("Enter a domain (or 'exit' to quit): ")
-            if domain == "exit":
-                break
+# Function to query a DNS server and handle timeouts
+def query_dns(server, query, port):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((server, port))
+            s.send(query.encode())
+            response = s.recv(1024).decode()
+            return response
+    except (ConnectionRefusedError, TimeoutError):
+        return None
 
-            response = self.resolve_dns(domain)
-            print(response.decode('utf-8'))
+# Function to resolve a domain
+def resolve_domain(domain):
+    start_time = time.time()
 
-    def resolve_dns(self, domain):
-        # Cek cache terlebih dahulu
-        if domain in self.cache:
-            return self.cache[domain]
+    # Step 1: Query the root server
+    root_response = query_dns("localhost", domain + "\n", root_port)
+    if root_response is None:
+        print("FAILED TO CONNECT TO ROOT")
+        sys.exit(1)
 
-        # Tambahkan pernyataan print untuk debugging
-        print(f"Mengirim permintaan DNS untuk domain: {domain}")
+    # Step 2: Extract TLD server port from the root response
+    tld_port = int(root_response.strip())
+    
+    # Step 3: Query the TLD server
+    tld_response = query_dns("localhost", ".".join(domain.split('.')[1:]) + "\n", tld_port)
+    if tld_response is None:
+        print("NXDOMAIN")
+        sys.exit(1)
 
-        # Jika tidak ada di cache, kirimkan permintaan ke root DNS server
-        root_dns_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        root_dns_socket.connect(self.root_dns_server)
-        
-        # Kirim permintaan DNS ke root DNS server
-        root_dns_socket.send(domain.encode('utf-8'))
-        
-        # Terima respons dari root DNS server
-        response = root_dns_socket.recv(1024)
-        
-        # Simpan hasil ke cache sebelum mengembalikannya
-        self.cache[domain] = response
-        
-        return response
+    # Step 4: Extract authoritative server port from the TLD response
+    auth_port = int(tld_response.strip())
+    
+    # Step 5: Query the authoritative server
+    auth_response = query_dns("localhost", domain + "\n", auth_port)
+    if auth_response is None:
+        print("NXDOMAIN")
+        sys.exit(1)
 
-if __name__ == "__main__":
-    main(argv[1:])
+    # Step 6: Print the resolved port
+    print(auth_response.strip())
+
+    elapsed_time = time.time() - start_time
+
+    if elapsed_time > timeout:
+        print("NXDOMAIN")
+        sys.exit(1)
+
+# Main program
+while True:
+    try:
+        user_input = input("Enter a domain (Ctrl-D to exit): ")
+        if not user_input:
+            break
+        resolve_domain(user_input)
+    except KeyboardInterrupt:
+        break
