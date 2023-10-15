@@ -1,5 +1,4 @@
-1025
-com,1234
-org,2587
+1024
+com,1025
 www.google.com,8987
-google.com,8888
+google.com,1026
