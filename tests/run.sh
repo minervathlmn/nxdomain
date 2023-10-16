@@ -1,8 +1,4 @@
 #!/bin/bash
-
-# Compile server.py if needed
-# Example: python -m py_compile server.py
-
 # Run your server.py in the background
 # Example: python server.py config.txt &
 
