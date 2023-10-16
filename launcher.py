@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Check the number of command-line arguments
+# Check the number of command-line arguments, must be 3
 if len(sys.argv) != 3:
     print("INVALID ARGUMENTS")
     sys.exit(1)
