@@ -37,7 +37,7 @@ def handle_add_command(command, connection):
     parts = command.split()
     if len(parts) == 3:
         _, hostname, port = parts
-        if hostname.isalnum() and port.isdigit():
+        if hostname.isalnum() and port.isdigit() or '.' in hostname:
             port = int(port)
             hostname_to_port[hostname] = port
             connection.send(f"OK\n".encode())
